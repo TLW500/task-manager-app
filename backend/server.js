@@ -23,7 +23,7 @@ app.use(express.json());
 // Any request to /api/auth goes to authRoutes
 app.use("/api/auth", require("./routes/authRoutes"));
 
-// Any request to /api/task goes to teasRoutes
+// Any request to /api/task goes to taskRoutes
 app.use("/api/tasks", require("./routes/taskRoutes"));
 
 // Simple test route

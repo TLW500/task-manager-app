@@ -16,15 +16,21 @@ function App() {
   const register = async () => {
     try {
       const res = await axios.post("http://localhost:5000/api/auth/register", {
-        name: " ",
+        name: "Tyrrell",
         email,
         password,
       });
 
       setUser(res.data);
       localStorage.setItem("token", res.data.token)
+
+      alert("Registered successfully");
+
     } catch (err) {
-      console.error(err);
+      console.error("FULL ERROR:", err);
+      console.log("SERVER RESPONSE:", err.respose?.data);
+
+      alert(JSON.stringify(err.response?.data));
     }
   };
 
@@ -41,6 +47,12 @@ function App() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setTasks({});
   };
 
   // Fetch tasks
@@ -165,6 +177,12 @@ function App() {
     ) : (
       <>
         <h2>Welcome {user.name}</h2>
+        <button
+          onClick={logout}
+          style={{ marginButtom: "20px"}}
+        >
+          Logout
+        </button>
 
         {/* Create Task Form */}
         <h3>Create Task</h3>
