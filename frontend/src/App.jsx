@@ -1,3 +1,4 @@
+import "./App.css";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import TaskForm from "./components/TaskForm";
@@ -13,7 +14,20 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
   const [editingTaskId, setEditingTaskId] = useState(null);
+
+  // Filter state
+  const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [message, setMessage] = useState(""); // message state
+  const [messageType, setMessageType] = useState(""); // message type state
+
+  // error state
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
 
   const register = async () => {
     try {
@@ -27,13 +41,15 @@ function App() {
       localStorage.setItem("user", JSON.stringify(res.data));
       localStorage.setItem("token", res.data.token)
 
-      alert("Registered successfully");
+      setMessage("Registration successful.");
+      setMessageType("success");
 
     } catch (err) {
       console.error("FULL ERROR:", err);
       console.log("SERVER RESPONSE:", err.response?.data);
 
-      alert(JSON.stringify(err.response?.data));
+      setMessage(err.response?.data?.message || "Registration failed.");
+      setMessageType("error");
     }
   };
 
@@ -48,8 +64,13 @@ function App() {
       setUser(res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
       localStorage.setItem("token", res.data.token);
+
+      setMessage(`Welcome back, ${res.data.name}!`);
+      setMessageType("success");
     } catch (err) {
       console.error(err);
+      setMessage(err.response?.data?.message || "Login failed.");
+      setMessageType("error");
     }
   };
 
@@ -81,25 +102,60 @@ function App() {
 
   // Create task
   const createTask = async () => {
+   if (!title.trim()) {
+      setMessage("Task title is required.");
+      setMessageType("error");
+      return;
+    }
+
+    if (dueDate) {
+      const selectedDateTime = new Date(
+        `${dueDate}T${dueTime || "23:59"}`
+      );
+
+      if (
+        Number.isNaN(selectedDateTime.getTime()) ||
+        selectedDateTime < new Date()
+      ) {
+        setMessage("Due date and time must be in the future.");
+        setMessageType("error");
+        return;
+      }
+    }
+
     try {
       const token = localStorage.getItem("token");
 
       await axios.post(
         "http://localhost:5000/api/tasks",
-        { title, description },
+        {
+          title,
+          description,
+          dueDate,
+          dueTime,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      
+
       setTitle("");
       setDescription("");
+      setDueDate("");
+      setDueTime("");
 
-      fetchTasks(); // refresh list
+      await fetchTasks();
+
+      setMessage("Task created successfully.");
+      setMessageType("success");
     } catch (err) {
       console.error(err);
+      setMessage(
+        err.response?.data?.message || "Unable to create task."
+      );
+      setMessageType("error");
     }
   };
 
@@ -115,6 +171,8 @@ function App() {
       });
 
       fetchTasks(); // refresh list
+      setMessage("Task deleted successfully.");
+      setMessageType("success");
     } catch (err) {
       console.error(err);
     }
@@ -122,12 +180,25 @@ function App() {
 
   // Update task
   const updateTask = async (id) => {
+    if (dueDate){
+    const selectedDate = new Date(dueDate);
+    const today = new Date();
+
+    selectedDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      setMessage("Due date cannot be a past date.");
+      setMessageType("error");
+      return;
+    }
+  }
     try {
       const token = localStorage.getItem("token");
 
       await axios.put(
         `http://localhost:5000/api/tasks/${id}`,
-        { title, description },
+        { title, description, dueDate, dueTime },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -138,8 +209,12 @@ function App() {
       setEditingTaskId(null);
       setTitle("");
       setDescription("");
+      setDueDate("");
+      setDueTime("");
       
       fetchTasks();
+      setMessage("Task updated successfully.");
+      setMessageType("success");
     } catch (err) {
       console.error(err);
     }
@@ -180,9 +255,43 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!message) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setMessage("");
+      setMessageType("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  const filteredTasks = tasks.filter((task) => {
+  const matchesFilter =
+    filter === "completed"
+      ? task.completed
+      : filter === "active"
+      ? !task.completed
+      : true;
+
+  const matchesSearch =
+    task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    task.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+  return matchesFilter && matchesSearch;
+});
+
   return (
-  <div style={{ padding: "20px", maxWidth: "500px", margin: "auto" }}>
+  <div className="app-container">
+    <div className="app-card">
     <h1>Task Manager</h1>
+    {message && (
+      <div className={`message ${messageType}`}>
+        {message}
+      </div>
+    )}
 
     {!user ? (
       <>
@@ -200,21 +309,25 @@ function App() {
         />
         <br /><br />
 
-        <button onClick={register}>Register</button>
+        <div className="auth-buttons">
+          <button onClick={register}>
+            Register
+          </button>
 
-        <button
-          onClick={login}
-          style={{ marginLeft: "10px" }}
-        >
-          Login
-        </button>
+          <button
+            onClick={login}
+            className="secondary-btn"
+          >
+            Login
+          </button>
+        </div>
       </>
     ) : (
       <>
         <h2>Welcome {user.name}</h2>
         <button
           onClick={logout}
-          style={{ marginBottom: "20px"}}
+          className="logout-btn"
         >
           Logout
         </button>
@@ -223,8 +336,12 @@ function App() {
         <TaskForm
           title={title}
           description={description}
+          dueDate={dueDate}
+          dueTime={dueTime}
           setTitle={setTitle}
           setDescription={setDescription}
+          setDueDate={setDueDate}
+          setDueTime={setDueTime}
           createTask={createTask}
           updateTask={updateTask}
           editingTaskId={editingTaskId}
@@ -232,19 +349,49 @@ function App() {
 
         <hr />
 
+        {/* Filter */}
+        <input
+          className="search-input"
+          placeholder="Search tasks..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <div className="filter-buttons">
+          <button onClick={() => setFilter("all")}>
+            All
+          </button>
+
+          <button
+            onClick={() => setFilter("active")}
+            style={{ marginLeft: "10px" }}
+          >
+            Active
+          </button>
+
+          <button
+            onClick={() => setFilter("completed")}
+            style={{ marginLeft: "10px" }}
+          >
+            Completed
+          </button>
+        </div>
+
         {/* Task List */}
         <TaskList
-          tasks={tasks}
+          tasks={filteredTasks}
           onDelete={deleteTask}
           onEdit={(task) => {
             setEditingTaskId(task._id);
             setTitle(task.title);
             setDescription(task.description);
+            setDueDate(task.dueDate ? task.dueDate.slice(0, 10) : "");
+            setDueTime(task.dueTime || "");
           }}
           toggleComplete={toggleComplete}
         />
       </>
     )}
+    </div>
   </div>
   );
 }

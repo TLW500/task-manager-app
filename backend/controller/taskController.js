@@ -15,12 +15,14 @@ const getTasks = async (req, res) => {
 // Create new task
 const createTask = async (req, res) => {
     try {
-        const { title, description} = req.body;
+        const { title, description, dueDate, dueTime } = req.body;
 
         const task = await Task.create({
             user: req.user._id, // link task to logged-in user
             title,
             description,
+            dueDate,
+            dueTime,
         });
 
         res.status(201).json(task);
@@ -48,6 +50,8 @@ const updateTask = async (req, res) => {
         task.title = req.body.title ?? task.title;
         task.description = req.body.description ?? task.description;
         task.completed = req.body.completed ?? task.completed;
+        task.dueDate = req.body.dueDate ?? task.dueDate;
+        task.dueTime = req.body.dueTime ?? task.dueTime;
 
         const updatedTask = await task.save();
 

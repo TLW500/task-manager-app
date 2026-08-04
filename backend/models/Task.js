@@ -16,6 +16,16 @@ const taskSchema = new mongoose.Schema(
             type: String,
             default: "", // optional
         },
+
+        dueDate: {
+            type: Date,
+        },
+
+        dueTime: {
+            type: String,
+            defualt:"",
+        },
+        
         completed: {
             type: Boolean,
             default: false, // starts as not completed

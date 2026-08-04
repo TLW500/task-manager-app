@@ -1,49 +1,60 @@
 function TaskList({ tasks, onDelete, onEdit, toggleComplete }) {
     if (tasks.length === 0) {
-        return <p>No tasks yet. </p>
+        return <p className="empty-text">No tasks yet.</p>;
     }
 
     return (
-        <>
-        {tasks.map((task) => (
-          <div key={task._id} style={{
-            border: "1px solid #ccc",
-            padding: "12px",
-            borderRadius: "8px",
-            marginBottom: "12px"
-          }}>
-            <strong
-              style={{
-                textDecoration: task.completed
-                  ? "line=through"
-                  : "none",
-              }}
-            >
-                {task.title}
-            </strong>
-            <p>{task.description}</p>
+        <div className="task-list">
+            {tasks.map((task) => (
+                <div 
+                  key={task._id}
+                  className="task-card"
+                  >
+                    <div className="task-header">
+                        <h3 className={task.completed ? "task-title completed-title" : "task-title"}>
+                            {task.title}
+                        </h3>
 
-            <button onClick={() => onDelete(task._id)}>
-                Delete
-            </button>
+                        <span className={task.completed ? "status done" : "status active"}>
+                            {task.completed ? "Done" : "Active"}
+                        </span>
+                    </div>
 
-            <button
-                onClick={() => onEdit(task)}
-                style={{ marginLeft: "10px "}}
-            >
-                Edit
-            </button>
+                    <p className="task-description">{task.description}</p>
 
-            <button
-              onClick={() => toggleComplete(task._id)}
-              style={{ marginLeft: "10px" }}
-            >
-                {task.completed ? "Undo" : "Complete"}
-            </button>
-            </div>
-        ))}
-    </>
+                    <p className="due-date">
+                        Due:{" "}
+                        {task.dueDate
+                            ? new Date(task.dueDate).toLocaleDateString()
+                        : "No due date"}
+                    </p>
+
+                    <p className="due-date">
+                        Time"{" "}
+                        {task.dueTime 
+                          ? new Date(`2000-01-01T${task.dueTime}`).toLocaleTimeString([], {
+                            hour: "numeric", 
+                            minute: "2-digit",
+                            }) 
+                          : "No due time"}
+                    </p>
+
+                    <div className="task-actions">
+                        <button onClick={() => toggleComplete(task._id)}>
+                            {task.completed ? "Undo" : "Complete"}
+                        </button>
+
+                        <button className="secondary-btn" onClick={() => onEdit(task)}>
+                            Edit
+                        </button>
+
+                        <button className="delete-btn" onClick={() => onDelete(task._id)}>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            ))}
+        </div>
     );
-}
-
+}   
 export default TaskList;
