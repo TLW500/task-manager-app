@@ -24,14 +24,12 @@ function App() {
   const [message, setMessage] = useState(""); // message state
   const [messageType, setMessageType] = useState(""); // message type state
 
-  // error state
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL;
 
 
   const register = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
+      const res = await axios.post(`${API_URL}/api/auth/register`, {
         name: "Tyrrell",
         email,
         password,
@@ -45,9 +43,7 @@ function App() {
       setMessageType("success");
 
     } catch (err) {
-      console.error("FULL ERROR:", err);
-      console.log("SERVER RESPONSE:", err.response?.data);
-
+      console.error(err);
       setMessage(err.response?.data?.message || "Registration failed.");
       setMessageType("error");
     }
@@ -56,7 +52,7 @@ function App() {
   // Login user
   const login = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
       });
@@ -88,7 +84,7 @@ function App() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await axios.get("http://localhost:5000/api/tasks", {
+      const res = await axios.get(`${API_URL}/api/tasks`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -127,7 +123,7 @@ function App() {
       const token = localStorage.getItem("token");
 
       await axios.post(
-        "http://localhost:5000/api/tasks",
+        `${API_URL}/api/tasks`,
         {
           title,
           description,
@@ -164,7 +160,7 @@ function App() {
     try {
       const token = localStorage.getItem("token");
 
-      await axios.delete(`http://localhost:5000/api/tasks/${id}`, {
+      await axios.delete(`${API_URL}/api/tasks/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -180,52 +176,65 @@ function App() {
 
   // Update task
   const updateTask = async (id) => {
-    if (dueDate){
-    const selectedDate = new Date(dueDate);
-    const today = new Date();
+  if (!title.trim()) {
+    setMessage("Task title is required.");
+    setMessageType("error");
+    return;
+  }
 
-    selectedDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
+  if (dueDate) {
+    const selectedDateTime = new Date(
+      `${dueDate}T${dueTime || "23:59"}`
+    );
 
-    if (selectedDate < today) {
-      setMessage("Due date cannot be a past date.");
+    if (
+      Number.isNaN(selectedDateTime.getTime()) ||
+      selectedDateTime < new Date()
+    ) {
+      setMessage("Due date and time must be in the future.");
       setMessageType("error");
       return;
     }
   }
-    try {
-      const token = localStorage.getItem("token");
 
-      await axios.put(
-        `http://localhost:5000/api/tasks/${id}`,
-        { title, description, dueDate, dueTime },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  try {
+    const token = localStorage.getItem("token");
 
-      setEditingTaskId(null);
-      setTitle("");
-      setDescription("");
-      setDueDate("");
-      setDueTime("");
-      
-      fetchTasks();
-      setMessage("Task updated successfully.");
-      setMessageType("success");
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    await axios.put(
+      `${API_URL}/api/tasks/${id}`,
+      { title, description, dueDate, dueTime },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    setEditingTaskId(null);
+    setTitle("");
+    setDescription("");
+    setDueDate("");
+    setDueTime("");
+
+    await fetchTasks();
+
+    setMessage("Task updated successfully.");
+    setMessageType("success");
+  } catch (err) {
+    console.error(err);
+    setMessage(
+      err.response?.data?.message || "Unable to update task."
+    );
+    setMessageType("error");
+  }
+};
 
   const toggleComplete = async (id) => {
     try {
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `http://localhost:5000/api/tasks/${id}/toggle`,
+        `${API_URL}/api/tasks/${id}/toggle`,
         {},
         {
           headers: {
