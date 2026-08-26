@@ -9,6 +9,8 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
+  const [name, setName] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
 
   // Task state
   const [tasks, setTasks] = useState([]);
@@ -27,17 +29,34 @@ function App() {
   const API_URL = import.meta.env.VITE_API_URL;
 
 
-  const register = async () => {
+  const registerUser = async () => {
+    if(!name.trim() || !email.trim() || !password) {
+      setMessage("Name, email, and password are required.");
+      setMessageType("error");
+      return;
+    }
     try {
       const res = await axios.post(`${API_URL}/api/auth/register`, {
-        name: "Tyrrell",
+        name,
         email,
         password,
+      });
+
+      console.log("Registering with:", {
+        name,
+        email,
+        passwordLength: password.length,
       });
 
       setUser(res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
       localStorage.setItem("token", res.data.token)
+
+      //Clear the registration form
+      setName("");
+      setEmail("");
+      setPassword("");
+      setIsRegistering(false);
 
       setMessage("Registration successful.");
       setMessageType("success");
@@ -75,6 +94,7 @@ function App() {
     localStorage.removeItem("user");
     setUser(null);
     setTasks([]);
+    setName("");
     setEmail("");
     setPassword("");
   };
@@ -304,9 +324,21 @@ function App() {
 
     {!user ? (
       <>
-        {/* Login/Register */}
+        {isRegistering && (
+          <>
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <br /><br />
+          </>
+    )}
         <input
+          type="email"
           placeholder="Email"
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <br /><br />
@@ -314,23 +346,50 @@ function App() {
         <input
           type="password"
           placeholder="Password"
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         <br /><br />
 
         <div className="auth-buttons">
-          <button onClick={register}>
-            Register
+          {isRegistering ? (
+            <>
+              <button onClick={registerUser}>
+                Create Account
+              </button>
+
+              <button
+                className="secondary-btn"
+                onClick={() => {
+                  setIsRegistering(false);
+                  setName("");
+                  setMessage("");
+                  setMessageType("");
+                }}
+              >
+                Back to Login
+              </button>
+            </>
+          ) : (
+        <>
+          <button onClick={login}>
+            Login
           </button>
 
           <button
-            onClick={login}
             className="secondary-btn"
+            onClick={() => {
+              setIsRegistering(true)
+              setMessage("");
+              setMessageType("");
+            }}
           >
-            Login
+            Create Account
           </button>
-        </div>
-      </>
+        </>
+      )}
+    </div>
+    </>
     ) : (
       <>
         <h2>Welcome {user.name}</h2>

@@ -1,76 +1,114 @@
 const User = require("../models/User");
-const bcrypt = require("bcrypt");  // used to hash passwords
-const jwt = require("jsonwebtoken");  // used for login tokens
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-// Function to create a JWT token
+// Create a JWT token
 const generateToken = (id) => {
-    return jwt.sign(
-        { id },                  // payload (user id)
-        process.env.JWT_SECRET,  // secret key
-        { expiresIn: "7d" }      // token expires in 7 days
-    );
+  return jwt.sign(
+    { id },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 };
 
 // Register new user
 const registerUser = async (req, res) => {
-    try {
-        // Get data from request body
-        const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-        // Check if user already exists
-        const userExists = await User.findOne({ email });
-        if (userExists) {
-            return res.status(400).json({ message: "User already exist "});
-        }
-
-        // Hash password for security
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Create user in database
-        const user = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-        });
-
-        // Send response with user info + token
-        res.status(201).json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            token: generateToken(user._id)
-        });
-    }   catch (error) {
-        console.error("REGISTER ERROR:", error);
-        res.status(500).json ({ message: error.message });
+    // Validate required fields
+    if (!name?.trim() || !email?.trim() || !password) {
+      return res.status(400).json({
+        message: "Name, email, and password are required.",
+      });
     }
+
+    // Basic password requirement
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters.",
+      });
+    }
+
+    // Normalize the email before checking and saving
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const userExists = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    if (userExists) {
+      return res.status(400).json({
+        message: "A user with this email already exists.",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+    });
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Unable to register user.",
+    });
+  }
 };
 
 // Login user
 const loginUser = async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        // Find user by email
-        const user = await User.findOne({ email });
-
-        // Check password matches
-        if (user && (await bcrypt.compare(password, user.password))) {
-            res.json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                token: generateToken(user._id),
-            });
-        } else {
-            res.status(401).json({ message: "Invalid email or password " });
-        }
-    } catch (error) {
-            console.error("LOGIN ERROR:", error);
-            res.status(500).json({ message: error.message });
+    if (!email?.trim() || !password) {
+      return res.status(400).json({
+        message: "Email and password are required.",
+      });
     }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    if (
+      user &&
+      (await bcrypt.compare(password, user.password))
+    ) {
+      return res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        token: generateToken(user._id),
+      });
+    }
+
+    return res.status(401).json({
+      message: "Invalid email or password.",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Unable to log in.",
+    });
+  }
 };
 
-// Export functions
-module.exports = { registerUser, loginUser };
+module.exports = {
+  registerUser,
+  loginUser,
+};

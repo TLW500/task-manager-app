@@ -9,25 +9,38 @@ const protect = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
         try {
           // Extract token from header
-          token = req.headers.authorization && req.headers.authorization.split(" ")[1];
+          token = req.headers.authorization.split(" ")[1];
 
           // Verify token
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
           // Get user from database (excluding password)
-          req.user = await User.findById(decoded.id).select("-password");
+          const user = await User.findById(decoded.id).select("-password");
 
-          // Continue to next function
-          next();
+          // Make sure the user still exists
+          if (!user) {
+            return res.status(401).json({
+                message: "Not authorized, user not found",
+            });
+         }
+
+         // Attach user to request object
+         req.user = user;
+
+        // Continue to next function
+        return next();
+
         } catch (error) {
-            res.status(401).json({ message: "Not authorized, token failed" });
+           return res.status(401).json({ 
+              message: "Not authorized, token failed",
+            });
         }
     }
 
     // If not token
-    if (!token) {
-        res.status(401).json({ message: "Not authorized, no token" });
-    }
+    return res.status(401).json({ 
+        message: "Not authorized, no token",
+    });
 };
 
 module.exports = { protect };

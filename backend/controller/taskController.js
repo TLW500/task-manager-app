@@ -4,7 +4,8 @@ const Task = require("../models/Task");
 const getTasks = async (req, res) => {
     try {
         // Find tasks that belong to the current user
-        const tasks = await Task.find({ user: req.user._id });
+        const tasks = await Task.find({ user: req.user._id })
+        .sort({ createdAt: -1 });
 
         res.json(tasks);
     }   catch (error) {
@@ -17,16 +18,22 @@ const createTask = async (req, res) => {
     try {
         const { title, description, dueDate, dueTime } = req.body;
 
+        if (!title || !title.trim()) {
+            return res.status(400).json({
+                message: "Task title is required",
+            });
+        }
+
         const task = await Task.create({
-            user: req.user._id, // link task to logged-in user
-            title,
+            user: req.user._id,
+            title: title.trim(),
             description,
             dueDate,
             dueTime,
         });
 
         res.status(201).json(task);
-    }   catch (error) {
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
@@ -43,7 +50,13 @@ const updateTask = async (req, res) => {
 
         // Ensure user owns this task
         if (task.user.toString() !== req.user._id.toString()) {
-            return res.status(401).json({ message: "Not authorized" });
+            return res.status(403).json({ message: "Not authorized" });
+        }
+
+        if (res.body.title !== undefined && !req.body.title.trim()) {
+            return res.status(400).json({
+                message: "Task title is required",
+            });
         }
 
         // Update fields if provided
@@ -71,7 +84,7 @@ const deleteTask = async (req, res ) => {
         }
 
         if (task.user.toString() !== req.user._id.toString()) {
-            return res.status(401).json({ message: "Not authorized "});
+            return res.status(403).json({ message: "Not authorized "});
         }
 
         await task.deleteOne();
@@ -92,12 +105,19 @@ const toggleTaskCompletion = async (req, res) => {
             });
         }
 
+        // Make sure the logged-in user owns this task
+        if (task.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "Not authorized",
+            });
+        }
+
         task.completed = !task.completed;
 
         const updatedTask = await task.save();
 
         res.json(updatedTask);
-    }   catch (error) {
+    } catch (error) {
         res.status(500).json({
             message: error.message,
         });

@@ -215,3 +215,14 @@ label {
   outline: none;
   border-color: #16a34a;
 }
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+form button {
+  align-self: flex-start;
+  margin-top: 8px;
+}
