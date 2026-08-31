@@ -226,6 +226,7 @@ function App() {
       {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       }
     );
@@ -419,7 +420,10 @@ function App() {
 
         {/* Filter */}
         <input
+          id="task-search"
+          name="taskSearch"
           className="search-input"
+          type="text"
           placeholder="Search tasks..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -431,14 +435,12 @@ function App() {
 
           <button
             onClick={() => setFilter("active")}
-            style={{ marginLeft: "10px" }}
           >
             Active
           </button>
 
           <button
             onClick={() => setFilter("completed")}
-            style={{ marginLeft: "10px" }}
           >
             Completed
           </button>

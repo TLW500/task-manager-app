@@ -226,3 +226,137 @@ form button {
   align-self: flex-start;
   margin-top: 8px;
 }
+
+@media (max-width: 768px) {
+  .app-container {
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 16px;
+  }
+
+  .app-card {
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+  }
+
+  .filter-buttons {
+    flex-wrap: wrap;
+  }
+
+  .filter-buttons button {
+    flex: 1;
+    min-width: 90px;
+  }
+
+  .auth-buttons{
+    flex-direction: column;
+  }
+
+  .auth-buttons button {
+    width: 100%;
+  }
+   
+  .secondary-btn {
+    margin-left: 0;
+  }
+
+  .task-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .task-actions button {
+    flex: 1;
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 10px;
+  }
+
+  .app-card {
+    width: 100%;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  input {
+    font-size: 16px;
+  }
+
+  .task-card {
+    padding: 14px;
+  }
+
+  .task-header {
+    flex-direction: column;
+  }
+
+  .task-title {
+    font-size: 17px;
+  }
+
+  .task-actions {
+    flex-direction: column;
+  }
+
+  .task-actions button {
+    width: 100%;
+  }
+
+  .filter-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .filter-buttons button {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    flex: none;
+  }
+
+  .logout-btn {
+    width: 100%;
+  }
+}
+
+/* Due date warning */
+.due-warning {
+  display: inline-block;
+  margin: 8px 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.due-warning.due-today {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.due-warning.due-soon {
+  background-color: #ffedd5;
+  color: #c2410c;
+}
+
+.due-warning.overdue {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}

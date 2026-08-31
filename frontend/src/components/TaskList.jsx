@@ -3,9 +3,81 @@ function TaskList({ tasks, onDelete, onEdit, toggleComplete }) {
     return <p className="empty-text">No tasks yet.</p>;
   }
 
+  const parseLocalDate = (dateValue) => {
+    if (!dateValue) {
+      return null;
+    }
+
+    const dateOnly = dateValue.slice(0, 10);
+    const [year, month, day] = dateOnly.split("-").map(Number);
+
+    return new Date(year, month - 1, day);
+  };
+
+  const getDueStatus = (dueDate, dueTime, completed) => {
+    if (completed || !dueDate) {
+      return null;
+    }
+
+    const now = new Date();
+
+    // Start with the task's due date
+    const due = parseLocalDate(dueDate);
+
+    // If the task has a specific due time, add it
+    if (dueTime) {
+      const [hours, minutes] = dueTime.split(":");
+
+      due.setHours(
+        Number(hours),
+        Number(minutes),
+        0,
+        0
+      );
+    } else {
+      // If no time was selected, consider it due at the end of the day
+      due.setHours(23, 59, 59, 999);
+    }
+
+    const difference = due - now;
+
+    const oneHour = 60 * 60 * 1000; // milliseconds in an hour
+    const oneDay = 24 * oneHour; // milliseconds in a day
+
+    if (difference < 0) {
+      return {
+        text: "Overdue",
+        className: "overdue",
+      };
+    }
+
+    if (difference <= oneHour) {
+      return {
+        text: "Due Soon",
+        className: "due-soon",
+      };
+    }
+
+    if (difference <= oneDay) {
+      return {
+        text: "Due Today",
+        className: "due-today",
+      };
+    }
+
+    return null;     
+  };
+
   return (
     <div className="task-list">
-      {tasks.map((task) => (
+      {tasks.map((task) => {
+        const dueStatus = getDueStatus(
+          task.dueDate,
+          task.dueTime,
+          task.completed
+        );
+
+        return (
         <div
           key={task._id}
           className={`task-card ${task.completed ? "completed-task" : ""}`}
@@ -39,7 +111,7 @@ function TaskList({ tasks, onDelete, onEdit, toggleComplete }) {
           <p className="due-date">
             Due:{" "}
             {task.dueDate
-              ? new Date(task.dueDate).toLocaleDateString()
+              ? parseLocalDate(task.dueDate).toLocaleDateString()
               : "No due date"}
           </p>
 
@@ -54,6 +126,12 @@ function TaskList({ tasks, onDelete, onEdit, toggleComplete }) {
                 })
               : "No due time"}
           </p>
+
+          {dueStatus && (
+            <p className={`due-status ${dueStatus.className}`}>
+              {dueStatus.text}  
+            </p>
+          )}
 
           <div className="task-actions">
             <button
@@ -80,7 +158,8 @@ function TaskList({ tasks, onDelete, onEdit, toggleComplete }) {
             </button>
           </div>
         </div>
-      ))}
+        );
+  })}
     </div>
   );
 }

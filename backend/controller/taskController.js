@@ -41,6 +41,15 @@ const createTask = async (req, res) => {
 // Update task
 const updateTask = async (req, res) => {
     try {
+        console.log("UPDATE BODY:", req.body);
+        console.log("CONTENT TYPE:", req.headers["content-type"]);
+
+        if (!req.body) {
+            return res.status(400).json({
+                message: "No task data was received.",
+            });
+        }
+
         const task = await Task.findById(req.params.id);
 
         // Check if task exists
@@ -53,14 +62,18 @@ const updateTask = async (req, res) => {
             return res.status(403).json({ message: "Not authorized" });
         }
 
-        if (res.body.title !== undefined && !req.body.title.trim()) {
+        if (req.body.title !== undefined && !req.body.title.trim()) {
             return res.status(400).json({
                 message: "Task title is required",
             });
         }
 
         // Update fields if provided
-        task.title = req.body.title ?? task.title;
+        task.title = 
+          req.body.title !== undefined
+            ? req.body.title.trim()
+            : task.title;
+        
         task.description = req.body.description ?? task.description;
         task.completed = req.body.completed ?? task.completed;
         task.dueDate = req.body.dueDate ?? task.dueDate;
@@ -70,7 +83,11 @@ const updateTask = async (req, res) => {
 
         res.json(updatedTask);
     }   catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("UPDATE TASK ERROR:", error);
+
+        res.status(500).json({ 
+            message: error.message,
+        });
     }
 };
 
