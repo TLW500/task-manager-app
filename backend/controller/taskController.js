@@ -41,9 +41,6 @@ const createTask = async (req, res) => {
 // Update task
 const updateTask = async (req, res) => {
     try {
-        console.log("UPDATE BODY:", req.body);
-        console.log("CONTENT TYPE:", req.headers["content-type"]);
-
         if (!req.body) {
             return res.status(400).json({
                 message: "No task data was received.",
